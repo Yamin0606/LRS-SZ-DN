@@ -1,0 +1,37 @@
+#usage: snakemake -s denovoTR.snakemake -j 10
+
+IN_PATH="/Users/yaminzhang/Desktop/博后/1-出站/thesis-postdoc/lrs/SCZ_20210928/Trio_SV_220207/Trio_denovo/straglr2" #your_path 
+THREADS=2 #cpu
+TRIOS = ["M416", "M425", "M426", "M430", "M433", "M446", "M452", "M470", "M473", "M489", "M502", "M509", "M517", "M518", "M524", "M530", "M532", "M534", "M537", "M546", "M550", "M551", "M561", "M579", "M589", "M594", "M602", "M605", "M625", "M628", "M633", "M636", "M655", "M667", "M668", "M669", "M671"]
+
+
+
+rule all:
+    input:
+        expand(IN_PATH + "/denovo_zym0331/{trio}_denovo_both_par", trio=TRIOS),
+
+
+
+rule TRDenovo:
+    input:
+        TR0 = IN_PATH + "/Samples/{trio}-0_straglr_TR.txt",
+        TR1 = IN_PATH + "/Samples/{trio}-1_straglr_TR.txt",
+        TR2 = IN_PATH + "/Samples/{trio}-2_straglr_TR.txt",
+    output:
+        out1 = IN_PATH + "/denovo_zym0331/{trio}_denovo_both_par",
+        out2 = IN_PATH + "/denovo_zym0331/{trio}_denovo_diff_motif",
+        out3 = IN_PATH + "/denovo_zym0331/{trio}_denovo_one_par",
+        out4 = IN_PATH + "/denovo_zym0331/{trio}_denovo_no_par",
+        out5 = IN_PATH + "/denovo_zym0331/{trio}_denovo_no_par_overlap",
+    params:
+        TRdenovo = "TRdenovo_ym.py"
+    threads:
+        THREADS
+    log:
+        IN_PATH + "/log/TRDenovo_{trio}.log"
+    run:
+        parents = ",".join([input.TR1, input.TR2])
+        shell("python {params.TRdenovo} --geno {input.TR0}  --parent {parents}  --out1 {output.out1} --out2  {output.out2} --out3 {output.out3} --out4 {output.out4} --out5 {output.out5} > {log} 2>&1")
+
+
+
