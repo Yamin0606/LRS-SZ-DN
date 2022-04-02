@@ -1,0 +1,61 @@
+#usage: snakemake -s hotspot_hg19.snakemake -j 10
+
+IN_PATH1="/Users/yaminzhang/Desktop/lrs-de_novo/analysis_2022/sv_hotspot" 
+IN_PATH2="/Users/yaminzhang/Desktop/博后/1-出站/thesis-postdoc/lrs/SCZ_20210928/Trio_SV_220207/bed"
+code_path = "/Users/yaminzhang/PycharmProjects/pythonProject"
+THREADS=2 #cpu
+RAN = list(range(1000))
+
+
+
+rule all:
+    input:
+        expand(IN_PATH1 + "/match_hg19_0.2/random_matched_{ran}.txt", ran=RAN),
+        expand(IN_PATH1 + "/match_hg19_0.2/sv_match_hotspot_overlap_{ran}.txt", ran=RAN),
+
+rule Match:
+    input:
+        sv0 = IN_PATH1 + "/all_denovo_proband_final-3_size50_hg19.tsv",
+        sv1 = IN_PATH2 + "/chr_Sample_common_SV_DEL_INS_INV_DUP.bed",
+    output:
+        match = IN_PATH1 + "/match_hg19_0.2/random_matched_{ran}.txt",
+    params:
+        Rmatch = code_path + "/match_size_random.py",
+    threads:
+        THREADS
+    log:
+        IN_PATH1 + "/log/hotspot_overlap_{ran}.log"
+    run:
+        shell("python {params.Rmatch} {input.sv0} {input.sv1} {output.match} ")
+
+
+rule Ovarlap_Hotsopt:
+    input:
+        hotspot = IN_PATH1 + "/only_hotspot_3col.txt",
+        match = IN_PATH1 + "/match_hg19_0.2/random_matched_{ran}.txt",
+    output:
+        ovarlap_match = IN_PATH1 + "/match_hg19_0.2/sv_match_hotspot_overlap_{ran}.txt",
+    params:
+        Overlap = code_path + "/overlap_hotspot_sv_region.py",
+    threads:
+        THREADS
+    log:
+        IN_PATH1 + "/log/hotspot_overlap_{ran}.log"
+    run:
+        shell("python {params.Overlap} {input.match} {input.hotspot} {output.ovarlap_match} > {log} 2>&1")
+
+
+#rule Ovarlap_Hotsopt_target:
+#    input:
+#        sv0 = IN_PATH1 + "/all_denovo_proband_final-3_size50.tsv",
+#        hotspot = IN_PATH1 + "/only_hotspot_3col.txt",
+#    output:
+#        ovarlap_target = IN_PATH1 + "/sv_flt3_hotspot_overlap.txt",
+#    params:
+#        Overlap = code_path + "/overlap_hotspot_sv_region.py",
+#    threads:
+#        THREADS
+#    log:
+#        IN_PATH1 + "/log/hotspot_overlap_{ran}.log"
+#    run:
+#        shell("python {params.Overlap} {input.sv0} {input.hotspot}) {output.ovarlap_target} > ovarlap_target.log 2>&1")
